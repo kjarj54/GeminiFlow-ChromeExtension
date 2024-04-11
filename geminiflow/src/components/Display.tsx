@@ -19,6 +19,17 @@ export default function Component() {
   return (
     <div className="max-w-4xl mx-auto p-4">
       <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
+          <select
+            className="border border-gray-300 rounded-md p-2 none cursor-not-allowed opacity-50"
+            value={workflow}
+            onChange={(e) => setWorkflow(e.target.value)}
+            disabled
+          >
+            <option value="gemini">Gemini</option>
+            <option value="chatgpt">ChatGPT</option>
+          </select>
+        </div>
         <div className="w-full">
           <input
             className="border border-gray-300 rounded-md p-2"
