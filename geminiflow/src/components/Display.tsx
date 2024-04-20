@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Button from "./Button";
 
 export default function Component() {
   const [errorMessage, setErrorMessage] = useState("");
@@ -6,14 +7,21 @@ export default function Component() {
   const [workflow, setWorkflow] = useState("");
   const [includeLogs, setIncludeLogs] = useState(false);
 
-  const handleSubmit = () => {
-    // Handle form submission
-    console.log("Form submitted:", {
-      errorMessage,
-      context,
-      workflow,
-      includeLogs,
-    });
+  const handleSubmit = async () => {
+
+    const tabs = await chrome.tabs.query({});
+
+    const geminiTab = tabs.find(tab => tab.url && tab.url.includes("https://gemini.google.com/app"));
+
+    if (geminiTab) {
+        const tabId = geminiTab.id;
+        if (typeof tabId === 'number') {
+            await chrome.tabs.update(tabId, { active: true });
+        }
+    } else {
+        await chrome.tabs.create({ url: "https://gemini.google.com/app" });
+    }
+
   };
 
   return (
@@ -70,12 +78,7 @@ export default function Component() {
             Include logs or error output
           </label>
         </div>
-        <button
-          className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-md"
-          onClick={handleSubmit}
-        >
-          Submit
-        </button>
+        <Button onClick={handleSubmit} text="Submit" />
         <div className="border rounded-md p-4">
           <p className="font-medium">Gemini Tool Output:</p>
           <div className="mt-4 bg-gray-100 h-32 rounded-md flex items-center justify-center">
