@@ -11,7 +11,7 @@ export default function Component() {
   const [workflow, setWorkflow] = useState("");
   const [typeia, seTypeia] = useState("");
   const [showWarning, setShowWarning] = useState(false);
-  
+  const [prompts, setPrompts] = useState("");
 
   const handleSubmit = async () => {
     const tabs = await chrome.tabs.query({});
@@ -29,6 +29,7 @@ export default function Component() {
       const tabId = geminiTab.id;
       if (typeof tabId === "number") {
         await chrome.tabs.update(tabId, { active: true });
+        setPrompts(modifyPrompt(workflow, errorMessage, context));
         geminiScript(tabId, modifyPrompt(workflow, errorMessage, context));
       }
     } else {
@@ -40,10 +41,8 @@ export default function Component() {
       chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
         if (tabId === newTab.id && changeInfo.status === "complete") {
           chrome.tabs.onUpdated.removeListener(listener);
-          geminiScript(
-            newTab.id,
-            modifyPrompt(workflow, errorMessage, context)
-          );
+          setPrompts(modifyPrompt(workflow, errorMessage, context));
+          geminiScript(newTab.id, modifyPrompt(workflow, errorMessage, context));
           chrome.tabs.update(newTab.id, { active: true });
         }
       });
@@ -58,8 +57,6 @@ export default function Component() {
     const selectedWorkflow = promptsData.workflows.find(
       (w) => w.name === workflow
     );
-    console.log(promptsData.workflows);
-    console.log(selectedWorkflow);
 
     if (selectedWorkflow) {
       const task = selectedWorkflow.tasks[0];
@@ -69,7 +66,7 @@ export default function Component() {
       if (context.trim() !== "") {
         modifiedPrompt = modifiedPrompt.replace(
           "{context}",
-          context + "here you have more information"
+          context + " here you have more information"
         );
       } else {
         modifiedPrompt = modifiedPrompt.replace("{context}", "");
@@ -143,9 +140,11 @@ export default function Component() {
           </div>
         )}
         <div className="border rounded-md p-4">
-          <p className="font-medium">Gemini Tool Output:</p>
+          <p className="font-medium">Gemini Tool Output: </p>
           <div className="mt-4 bg-gray-100 h-32 rounded-md flex items-center justify-center">
-            <span className="text-gray-500">{}</span>
+            <span className="text-gray-500 max-w-full overflow-hidden overflow-ellipsis">
+              <p className="font-medium from-neutral-50 rounded-md p-2">{prompts}</p>
+            </span>
           </div>
         </div>
       </div>
