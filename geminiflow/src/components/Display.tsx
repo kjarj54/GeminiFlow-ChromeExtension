@@ -2,6 +2,7 @@ import { useState } from "react";
 import Button from "./Button";
 import ComponentInput from "./ComponentInput";
 import SelectInput from "./SelectInput";
+import promptsData from "./estructurepromps.json";
 import WorkflowSelect from "./WorkflowSelect";
 
 export default function Component() {
@@ -9,10 +10,16 @@ export default function Component() {
   const [context, setContext] = useState("");
   const [workflow, setWorkflow] = useState("");
   const [typeia, seTypeia] = useState("");
-  const [includeLogs, setIncludeLogs] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  
 
   const handleSubmit = async () => {
     const tabs = await chrome.tabs.query({});
+
+    if (workflow !== "tool" && workflow !== "reflection") {
+      setShowWarning(true);
+      return;
+    }
 
     const geminiTab = tabs.find(
       (tab) => tab.url && tab.url.includes("https://gemini.google.com/app")
@@ -22,7 +29,7 @@ export default function Component() {
       const tabId = geminiTab.id;
       if (typeof tabId === "number") {
         await chrome.tabs.update(tabId, { active: true });
-        geminiScript(tabId);
+        geminiScript(tabId, modifyPrompt(workflow, errorMessage, context));
       }
     } else {
       const newTab = await chrome.tabs.create({
@@ -33,14 +40,46 @@ export default function Component() {
       chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
         if (tabId === newTab.id && changeInfo.status === "complete") {
           chrome.tabs.onUpdated.removeListener(listener);
-          geminiScript(newTab.id || 0);
+          geminiScript(
+            newTab.id,
+            modifyPrompt(workflow, errorMessage, context)
+          );
           chrome.tabs.update(newTab.id, { active: true });
         }
       });
     }
   };
 
-  const geminiScript = async (tabId: number) => {
+  const modifyPrompt = (
+    workflow: string,
+    errorMessage: string,
+    context: string
+  ) => {
+    const selectedWorkflow = promptsData.workflows.find(
+      (w) => w.name === workflow
+    );
+    console.log(promptsData.workflows);
+    console.log(selectedWorkflow);
+
+    if (selectedWorkflow) {
+      const task = selectedWorkflow.tasks[0];
+
+      let modifiedPrompt = task.promp.replace("{code}", errorMessage);
+
+      if (context.trim() !== "") {
+        modifiedPrompt = modifiedPrompt.replace(
+          "{context}",
+          context + "here you have more information"
+        );
+      } else {
+        modifiedPrompt = modifiedPrompt.replace("{context}", "");
+      }
+      return modifiedPrompt;
+    }
+    return "Workflow no encontrado";
+  };
+
+  const geminiScript = async (tabId: number, promptText: string) => {
     chrome.scripting.executeScript({
       target: { tabId: tabId },
       func: (msg) => {
@@ -49,7 +88,7 @@ export default function Component() {
           paragraph.textContent = msg;
         }
       },
-      args: [errorMessage],
+      args: [promptText],
     });
 
     chrome.scripting.executeScript({
@@ -85,20 +124,28 @@ export default function Component() {
           onChange={(e) => setContext(e.target.value)}
         />
         <div className="flex flex-col gap-4">
-          <WorkflowSelect
-            value={workflow}
-            onChange={setWorkflow}
-            includeLogs={includeLogs}
-            onIncludeLogsChange={setIncludeLogs}
-          />
+          <WorkflowSelect value={workflow} onChange={setWorkflow} />
         </div>
         <Button onClick={handleSubmit} text="Submit" />
+        {showWarning && (
+          <div className="fixed top-0 left-0 right-0 bottom-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+            <div className="bg-white p-4 rounded-md shadow-lg">
+              <p className="text-red-500">
+                Workflow must be "tool" or "reflection".
+              </p>
+              <button
+                className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md"
+                onClick={() => setShowWarning(false)}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        )}
         <div className="border rounded-md p-4">
           <p className="font-medium">Gemini Tool Output:</p>
           <div className="mt-4 bg-gray-100 h-32 rounded-md flex items-center justify-center">
-            <span className="text-gray-500">
-              Output will be displayed here...
-            </span>
+            <span className="text-gray-500">{}</span>
           </div>
         </div>
       </div>

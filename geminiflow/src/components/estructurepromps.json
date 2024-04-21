@@ -1,0 +1,20 @@
+{
+    "workflows":[
+        {
+            "name":"reflection",
+            "tasks":[
+                {
+                    "promp":"You're a senior programer and you'll analize this {code} and propose impprovements, focuse on readability and performance.It examines the causes of this error and presents effective solutions. {context} "                    
+                }
+            ]
+        },
+        {
+            "name":"tool",
+            "tasks":[
+                {
+                    "promp":"You're a senior programer and you'll analize this {code} and propose impprovements searching in links and documentation, and give me links of interest on the subject or similar topics. It examines the causes of this error and presents effective solutions. {context} "                    
+                }
+            ]
+        }
+    ]
+}
