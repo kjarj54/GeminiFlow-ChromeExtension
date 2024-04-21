@@ -19,8 +19,8 @@ const WorkflowSelect: React.FC<WorkflowSelectProps> = ({
         onChange={(e) => onChange(e.target.value)}
       >
         <option value="">Select workflow</option>
-        <option value="todo">todo</option>
-        <option value="todo">todo</option>
+        <option value="reflection">Reflection</option>
+        <option value="planning">Planning</option>
       </select>
       <label
         className="text-sm font-medium leading-none"
