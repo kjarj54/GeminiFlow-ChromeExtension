@@ -85,19 +85,12 @@ export default function Component() {
           onChange={(e) => setContext(e.target.value)}
         />
         <div className="flex flex-col gap-4">
-          <WorkflowSelect value={workflow} onChange={setWorkflow} />
-          <label
-            className="text-sm font-medium leading-none"
-            htmlFor="include-logs"
-          >
-            <input
-              id="include-logs"
-              type="checkbox"
-              checked={includeLogs}
-              onChange={(e) => setIncludeLogs(e.target.checked)}
-            />
-            Include logs or error output
-          </label>
+          <WorkflowSelect
+            value={workflow}
+            onChange={setWorkflow}
+            includeLogs={includeLogs}
+            onIncludeLogsChange={setIncludeLogs}
+          />
         </div>
         <Button onClick={handleSubmit} text="Submit" />
         <div className="border rounded-md p-4">
