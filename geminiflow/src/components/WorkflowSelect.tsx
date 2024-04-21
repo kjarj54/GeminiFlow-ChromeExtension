@@ -20,7 +20,7 @@ const WorkflowSelect: React.FC<WorkflowSelectProps> = ({
       >
         <option value="">Select workflow</option>
         <option value="reflection">Reflection</option>
-        <option value="planning">Planning</option>
+        <option value="tool">Tool Use</option>
       </select>
       <label
         className="text-sm font-medium leading-none"
