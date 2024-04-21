@@ -1,50 +1,81 @@
 import { useState } from "react";
 import Button from "./Button";
+import ComponentInput from "./ComponentInput";
+import SelectInput from "./SelectInput";
+import WorkflowSelect from "./WorkflowSelect";
 
 export default function Component() {
   const [errorMessage, setErrorMessage] = useState("");
   const [context, setContext] = useState("");
   const [workflow, setWorkflow] = useState("");
+  const [typeia, seTypeia] = useState("");
   const [includeLogs, setIncludeLogs] = useState(false);
 
   const handleSubmit = async () => {
-
     const tabs = await chrome.tabs.query({});
 
-    const geminiTab = tabs.find(tab => tab.url && tab.url.includes("https://gemini.google.com/app"));
+    const geminiTab = tabs.find(
+      (tab) => tab.url && tab.url.includes("https://gemini.google.com/app")
+    );
 
     if (geminiTab) {
-        const tabId = geminiTab.id;
-        if (typeof tabId === 'number') {
-            await chrome.tabs.update(tabId, { active: true });
-        }
+      const tabId = geminiTab.id;
+      if (typeof tabId === "number") {
+        await chrome.tabs.update(tabId, { active: true });
+        geminiScript(tabId);
+      }
     } else {
-        await chrome.tabs.create({ url: "https://gemini.google.com/app" });
-    }
+      const newTab = await chrome.tabs.create({
+        url: "https://gemini.google.com/app",
+        active: false,
+      });
 
+      chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
+        if (tabId === newTab.id && changeInfo.status === "complete") {
+          chrome.tabs.onUpdated.removeListener(listener);
+          geminiScript(newTab.id || 0);
+          chrome.tabs.update(newTab.id, { active: true });
+        }
+      });
+    }
+  };
+
+  const geminiScript = async (tabId: number) => {
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: (msg) => {
+        const paragraph = document.querySelector(".ql-editor.textarea p");
+        if (paragraph) {
+          paragraph.textContent = msg;
+        }
+      },
+      args: [errorMessage],
+    });
+
+    chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: () => {
+        const sendButton = document.querySelector(
+          ".send-button"
+        ) as HTMLButtonElement;
+        if (sendButton) {
+          sendButton.click();
+        }
+      },
+    });
   };
 
   return (
     <div className="max-w-4xl mx-auto p-4">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-4">
-          <select
-            className="border border-gray-300 rounded-md p-2 none cursor-not-allowed opacity-50"
-            value={workflow}
-            onChange={(e) => setWorkflow(e.target.value)}
-            disabled
-          >
-            <option value="gemini">Gemini</option>
-            <option value="chatgpt">ChatGPT</option>
-          </select>
+          <SelectInput value={typeia} onChange={seTypeia} />
         </div>
         <div className="w-full">
-          <input
-            className="border border-gray-300 rounded-md p-2"
+          <ComponentInput
             placeholder="Enter error message or issue"
-            type="text"
             value={errorMessage}
-            onChange={(e) => setErrorMessage(e.target.value)}
+            onChange={setErrorMessage}
           />
         </div>
         <textarea
@@ -54,17 +85,7 @@ export default function Component() {
           onChange={(e) => setContext(e.target.value)}
         />
         <div className="flex flex-col gap-4">
-          <select
-            className="border border-gray-300 rounded-md p-2"
-            value={workflow}
-            onChange={(e) => setWorkflow(e.target.value)}
-          >
-            <option value="">Select workflow</option>
-            <option value="debugging">Debugging</option>
-            <option value="testing">Testing</option>
-            <option value="code-review">Code Review</option>
-            <option value="pair-programming">Pair Programming</option>
-          </select>
+          <WorkflowSelect value={workflow} onChange={setWorkflow} />
           <label
             className="text-sm font-medium leading-none"
             htmlFor="include-logs"
